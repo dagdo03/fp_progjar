@@ -284,8 +284,56 @@ class ChatApp():
 
 
     def groups_page(self):
-        return ft.Column(controls=[
-            ft.Text("This is the Groups page.")
-        ])
+        # Fetch groups from the server using ChatClient
+        groups = self.cc.proses("group get")
+        print("GROUPS", groups)
+
+        list_groups = ft.ListView(
+            expand=True,
+            spacing=10,
+            auto_scroll=True,
+        )
+
+        # Iterate over the groups retrieved and create UI elements to display them
+        for group_name in groups:
+            group_info = groups[group_name]
+            group_container = ft.Container(
+                content=ft.Text(group_name),
+                on_click=lambda e, groupname=group_name: self.join_group_dialog(e, groupname),
+            )
+            list_groups.controls.append(group_container)
+
+        return list_groups
+
+    def join_group_dialog(self, e, groupname):
+        self.groupname_dest = groupname
+        
+        response = self.cc.proses(f"group inbox {self.groupname_dest}")
+        print("group inbox", response)
+        
+        # Clear existing chat messages
+        self.chat.controls.clear()
+        
+        for chat_message in response['messages']:
+            self.chat.controls.append(ChatMessage(Message(chat_message['msg_from'], chat_message['msg'])))
+
+        new_message = ft.TextField()
+
+        def send_click(e):
+            if new_message.value == "":
+                return
+            response = self.cc.proses(f"group send {self.groupname_dest} {new_message.value}")
+            print(response)
+            self.chat.controls.append(ChatMessage(Message(self.cc.username, new_message.value)))
+
+            new_message.value = ""
+            self.page.update()
+
+        self.page.clean()
+        self.page.add(
+            self.chat, ft.Row(controls=[new_message, ft.ElevatedButton("Send", on_click=send_click)])
+        )
+        self.page.add(self.navigation_bar)
+        self.start_receiving_messages("group")
 
 ft.app(target=ChatApp().main)
