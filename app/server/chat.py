@@ -75,10 +75,13 @@ class Chat:
     def __init__(self):
         self.sessions={}
         self.users = {}
+        self.realms ={}
         # get all users from database
         cursor.execute("SELECT * FROM users")
         users = cursor.fetchall()
 
+        cursor.execute("SELECT * FROM realm")
+        realms = cursor.fetchall()
         # store users to self.users
         for user in users:
             self.users[user[1]] = {
@@ -89,6 +92,14 @@ class Chat:
                 'incoming': {},
                 'outgoing': {}
             }
+        for realm in realms:
+            self.realms[realm[0]] = {
+                'realm_id': realm[0],
+                'ip_address': realm[1],
+                'port': realm[2]
+            }
+
+        
         self.groups = {}
         # self.users['messi']={ 'nama': 'Lionel Messi', 'negara': 'Argentina', 'password': 'surabaya', 'incoming' : {}, 'outgoing': {}}
         # self.users['henderson']={ 'nama': 'Jordan Henderson', 'negara': 'Inggris', 'password': 'surabaya', 'incoming': {}, 'outgoing': {}}
@@ -203,10 +214,8 @@ class Chat:
                 realm_id = j[1].strip()
                 realm_address = j[2].strip()
                 realm_port = int(j[3].strip())
-                src_address = j[4].strip()
-                src_port = int(j[5].strip())
-                logging.warning("ADDREALM: {}:{} add realm {} to {}:{}" . format(src_address, src_port, realm_id, realm_address, realm_port))
-                return self.add_realm(realm_id, realm_address, realm_port, src_address, src_port)
+                logging.warning("ADDREALM: {}:ip {} port {}" . format(realm_id, realm_address, realm_port))
+                return self.add_realm(realm_id, realm_address, realm_port)
 
             elif (command=='ackrealm'):
                 realm_id = j[1].strip()
@@ -669,19 +678,20 @@ class Chat:
 
         return {'status': 'OK', 'messages': msgs}
 
-    def add_realm(self,realm_id,realm_address,realm_port,src_address,src_port):
-        if (realm_id in self.realms_info):
+    # def register(self, username, email, password):
+    #     username = username.replace("-", " ")
+    #     if username in self.users:
+    #         return {"status": "ERROR", "message": "User Sudah Terdaftar"}
+    #     # self.users[username] = {"nama": nama, "negara": negara, "password": password, "incoming": {}, "outgoing": {}}
+    #     cursor.execute("INSERT INTO users (username, email, password_hash, created_at) VALUES (%s, %s, %s, %s)", (username, email, password, datetime.now()))
+    #     db.commit()
+
+    def add_realm(self,realm_id,realm_address,realm_port):
+        if (realm_id in self.realms):
             return { 'status': 'ERROR', 'message': 'Realm sudah ada' }
-        try:
-            self.realms[realm_id] = RealmThreadCommunication(self, realm_address, realm_port)
-            result = self.realms[realm_id].sendstring("ackrealm {} {} {} {} {}\r\n" . format(realm_id, realm_address, realm_port, src_address, src_port))
-            if result['status']=='OK':
-                self.realms_info[realm_id] = {'serverip': realm_address, 'port': realm_port}
-                return result
-            else:
-                return {'status': 'ERROR', 'message': 'Realm unreachable'}
-        except:
-            return {'status': 'ERROR', 'message': 'Realm unreachable'}
+        self.realms[realm_id] = {"realm_id":realm_id, "ip_address":realm_address, "port":realm_port}
+        cursor.execute("INSERT INTO realm (realm_id, realm_address, realm_port) VALUES (%s, %s, %s)", (realm_id, realm_address, realm_port))
+        db.commit()
    
     def ack_realm(self,realm_id,realm_address,realm_port,src_address,src_port):
         self.realms[realm_id] = RealmThreadCommunication(self, src_address, src_port)
@@ -689,7 +699,7 @@ class Chat:
         return { 'status': 'OK', 'message': 'Connect realm berhasil' }
 
     def check_realm(self):
-        return { 'status': 'OK', 'message': self.realms_info }
+        cursor.execute("SELECT * FROM realm")
 
     def send_realm(self,sessionid,src_realm_addr,src_realm_port,realm_id,username_from,username_to,message):
         if (sessionid not in self.sessions):

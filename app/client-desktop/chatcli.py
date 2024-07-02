@@ -271,7 +271,7 @@ class ChatClient:
     def addrealm(self, realm_id, realm_address, realm_port):
         if (self.tokenid==""):
             return "Error, not authorized"
-        string="addrealm {} {} {} {} {}\r\n" . format(realm_id, realm_address, realm_port, self.address_ip, self.address_port)
+        string="addrealm {} {} {}\r\n" . format(realm_id, realm_address, realm_port, self.address_ip, self.address_port)
         result = self.sendstring(string)
         if result['status']=='OK':
             return "added {} realm" . format(realm_id)
