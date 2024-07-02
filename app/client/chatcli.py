@@ -49,8 +49,7 @@ class ChatClient:
                 return self.get_users()
             
             elif (command == "getme"):
-                tokenid = j[1].strip()
-                return self.get_me(tokenid)
+                return self.get_me()
             
             elif (command == "register"):
                 username = j[1].strip()
@@ -194,12 +193,12 @@ class ChatClient:
             return result["message"]
         else:
             return "Error, {}".format(result["message"])      
-    def get_me(self, tokenid):
+    def get_me(self):
         authenticated, error_message = self.is_login()
         if not authenticated:
             return error_message
         
-        string = "getme {} \r\n".format(tokenid)
+        string = "getme {} \r\n".format(self.tokenid)
         result = self.sendstring(string)
         if result["status"] == "OK":
             return result["message"]
