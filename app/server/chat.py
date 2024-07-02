@@ -141,6 +141,10 @@ class Chat:
             elif (command == "users"):
                 return self.get_users()
             
+            elif (command == "getme"):
+                tokenid = j[1].strip()
+                return self.get_me(tokenid)
+            
             # Fitur Baru Autentikasi
             elif command == "register":
                 username = j[1].strip()
@@ -150,7 +154,8 @@ class Chat:
                 return self.register(username, email, password)
             
             elif (command == "logout"):
-                return self.logout()
+                tokenid = j[1].strip()
+                return self.logout(tokenid)
             
             elif (command=='send'):
                 sessionid = j[1].strip()
@@ -322,10 +327,12 @@ class Chat:
         if (password != user[3]):
             return { 'status': 'ERROR', 'message': 'Password Salah' }
         tokenid = str(uuid.uuid4()) 
+        #cursor.execute("UPDATE users SET tokenid = %s WHERE username = %s", (tokenid, username)) 
         self.users[username] = {"user_id": user[0], "nama": user[1], "email": user[2], "password": user[3], "incoming": {}, "outgoing": {}}
         self.sessions[tokenid]={ 'username': username, 'userdetail':self.users[username]}
         return { 'status': 'OK', 'tokenid': tokenid }
-
+    
+        
     def get_users(self):
         # get all users from database
         cursor.execute("SELECT * FROM users")
@@ -342,8 +349,15 @@ class Chat:
                     'incoming': {},
                     'outgoing': {}
                 }
-        return {"status": "OK", "message": self.users}
+        return {"status": "OK", "message": self.users}  
 
+    def get_me(self, tokenid):
+        data = self.sessions[tokenid]
+        if (bool(data) == True):
+            return {"status": "OK", "message": data}
+        else:
+            return {"status": "Error", "message": "User tidak ditemukan"}
+            
     # FITUR AUTENTIKASI BARU
     def register(self, username, email, password):
         username = username.replace("-", " ")
@@ -363,10 +377,10 @@ class Chat:
         tokenid = str(uuid.uuid4())
         self.sessions[tokenid]={ 'username': username, 'userdetail':self.users[username]}
         return {"status": "OK", "tokenid": tokenid}
-    
-    def logout(self):
-        if bool(self.sessions) == True:
-            self.sessions.clear()
+
+    def logout(self, tokenid):
+        if tokenid in self.sessions:
+            del self.sessions[tokenid]
             return {"status": "OK"}
         else:
             return {"status": "ERROR", "message": "User Belum Login"}
