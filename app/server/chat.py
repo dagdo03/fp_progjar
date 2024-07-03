@@ -823,8 +823,6 @@ class Chat:
 
         return {'status': 'OK', 'messages': msgs}
 
-<<<<<<< HEAD
-=======
     # def register(self, username, email, password):
     #     username = username.replace("-", " ")
     #     if username in self.users:
@@ -833,7 +831,6 @@ class Chat:
     #     cursor.execute("INSERT INTO users (username, email, password_hash, created_at) VALUES (%s, %s, %s, %s)", (username, email, password, datetime.now()))
     #     db.commit()
 
->>>>>>> 17a8d22 (feature for multrealm)
     def add_realm(self,realm_id,realm_address,realm_port,src_address,src_port):
         if (realm_id in self.realms_info):
             return { 'status': 'ERROR', 'message': 'Realm sudah ada' }
