@@ -12,7 +12,7 @@ import json
 from chatcli import ChatClient
 
 TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.1"
-TARGET_PORT = os.getenv("SERVER_PORT") or "8000"
+TARGET_PORT = os.getenv("SERVER_PORT") or "8889"
 ON_WEB = os.getenv("ONWEB") or "0"
 
 class Message():
@@ -153,6 +153,8 @@ class ChatApp():
                 ft.NavigationBarDestination(icon=ft.icons.CHAT, label="Chats"),
                 ft.NavigationBarDestination(icon=ft.icons.GROUP, label="Groups"),
                 ft.NavigationBarDestination(icon=ft.icons.GROUP, label="Add Group"),
+                ft.NavigationBarDestination(icon=ft.icons.GROUP, label="Add Realm"),
+                ft.NavigationBarDestination(icon=ft.icons.GROUP, label="Chat Realm"),
             ],
         )
         
@@ -309,6 +311,14 @@ class ChatApp():
             self.page.controls.clear()
             self.page.add(self.navigation_bar)
             self.page.add(self.button_add_group())
+        elif e.control.selected_index == 3:
+            self.page.controls.clear()
+            self.page.add(self.navigation_bar)
+            self.page.add(self.button_add_realm())
+        elif e.control.selected_index == 4:
+            self.page.controls.clear()
+            self.page.add(self.navigation_bar)
+            self.page.add(self.inbox_realm())
         self.page.update()
 
     def chats_page(self):
@@ -332,6 +342,89 @@ class ChatApp():
             listuser.controls.append(container)
 
         return listuser
+
+    def inbox_realm(self):
+        add_group = ft.Column()
+        realm_id_input = ft.TextField(label="Realm ID")
+        add_group.controls.append(realm_id_input)
+        add_group_button = ft.ElevatedButton(text="get all inbox")
+        
+        add_group_rows = ft.Row()
+        add_group_rows.controls.append(add_group_button)
+        add_group.controls.append(add_group_rows)
+        
+        def on_add_realm_click(e):
+            realm_id = realm_id_input.value
+            send_string = f"inboxrealm {realm_id}"
+            print(send_string)
+            results = self.cc.proses(send_string)
+            print("this is result", results)
+            self.chat.controls.clear()
+            self.page.clean()
+            self.page.add(self.dlg_realm_modal(results))
+
+        add_group_button.on_click = on_add_realm_click
+        
+        return add_group
+    
+    def dlg_realm_modal(self, messages):
+        # Membuat container untuk menampung kontrol chat
+        chat_container = ft.Column()
+        
+        print("this is messages", messages)
+        for chat_message in messages:
+            print('this is chat message', chat_message)
+            if 'msg_from' in chat_message and 'msg' in chat_message:
+                chat_container.controls.append(
+                    ChatMessage(Message(chat_message['msg_from'], chat_message['msg']))
+                )
+
+        # Inisialisasi kontrol
+        realm_id = ft.TextField(label="Realm ID", hint_text="Masukkan ID Realm")
+        dest_user = ft.TextField(label="Destination User", hint_text="Masukkan Nama Pengguna")
+        new_message = ft.TextField(label="Message", hint_text="Masukkan Pesan")
+
+        def send_click(e):
+            if not realm_id.value or not dest_user.value or not new_message.value:
+                return  # Jika salah satu field kosong, tidak melakukan apapun
+
+            send_string = f"sendrealm {realm_id.value} {dest_user.value} {new_message.value}"
+            print("sendrealm", send_string)
+            response = self.cc.proses(send_string)
+            print("THIS IS RESPONSE", response)
+
+            if response:  # Pastikan response tidak None
+                chat_container.controls.append(
+                    ChatMessage(Message(self.cc.username, new_message.value))
+                )
+
+            new_message.value = ""  # Kosongkan pesan setelah pengiriman
+            realm_id.value = ""
+            dest_user.value = ""
+            e.page.update()  # Perbarui halaman untuk menampilkan perubahan
+
+        # Layout untuk form input dan tombol
+        input_row = ft.Row(
+            controls=[
+                realm_id,
+                dest_user,
+                new_message,
+                ft.ElevatedButton("Send", on_click=send_click)
+            ]
+        )
+
+        # Buat tampilan utama yang akan dikembalikan
+        main_layout = ft.Column(
+            controls=[
+                chat_container,
+                input_row,
+                self.navigation_bar if hasattr(self, 'navigation_bar') and self.navigation_bar else ft.Divider()  # Tambahkan navigation_bar jika ada
+            ]
+        )
+
+        return main_layout
+
+        
 
     def groups_page(self):
         groups = self.cc.proses("group get")
@@ -382,6 +475,7 @@ class ChatApp():
         )
         self.page.add(self.navigation_bar)
         self.start_receiving_messages("personal")
+
 
     def join_group_dialog(self, e, groupname):
         self.groupname_dest = groupname
@@ -445,6 +539,36 @@ class ChatApp():
         add_group_button.on_click = on_add_group_click
         return add_group
 
+
+    def button_add_realm(self):
+        add_group = ft.Column()
+        realm_id_input = ft.TextField(label="Realm ID")
+        add_group.controls.append(realm_id_input)
+        address_input = ft.TextField(label="Address")
+        add_group.controls.append(address_input)
+        port_input = ft.TextField(label="Port")
+        add_group.controls.append(port_input)
+        add_group_button = ft.ElevatedButton(text="Add Realm")
+
+        add_group_rows = ft.Row()
+        add_group_rows.controls.append(add_group_button)
+        add_group.controls.append(add_group_rows)
+
+        def on_add_realm_click(e):
+            realm_id = realm_id_input.value
+            address = address_input.value
+            port = port_input.value
+            string_send = f"addrealm {realm_id} {address} {port}"
+            print("string send", string_send)
+            response = self.cc.proses(string_send)
+            print(response)
+            self.page.controls.clear()
+            self.page.add(self.navigation_bar)
+            # self.page.add(self.groups_page())
+            self.page.update()
+
+        add_group_button.on_click = on_add_realm_click
+        return add_group
 
 if __name__ == "__main__":
     print("trying to connect ..")
