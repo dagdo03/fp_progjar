@@ -219,7 +219,9 @@ class Chat:
                 realm_id = j[1].strip()
                 realm_address = j[2].strip()
                 realm_port = int(j[3].strip())
-                logging.warning("ADDREALM: {}:ip {} port {}" . format(realm_id, realm_address, realm_port))
+                src_address = j[4].strip()
+                src_port = int(j[5].strip())
+                logging.warning("ADDREALM: {}:{} add realm {} to {}:{}" . format(realm_id, realm_address, realm_port))
                 return self.add_realm(realm_id, realm_address, realm_port)
 
             elif (command=='ackrealm'):
@@ -254,8 +256,7 @@ class Chat:
                 username = self.sessions[sessionid]['username']
                 logging.warning("GETREALMINBOX: {} from realm {}".format(sessionid, realmid))
                 return self.get_realm_inbox(username, realmid)
-            
-            
+
             elif (command == 'getrealmchat'):
                 realmid = j[1].strip()
                 username = j[2].strip()

@@ -193,6 +193,7 @@ class ChatClient:
             return result["message"]
         else:
             return "Error, {}".format(result["message"])      
+    
     def get_me(self):
         authenticated, error_message = self.is_login()
         if not authenticated:
