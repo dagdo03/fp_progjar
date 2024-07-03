@@ -18,6 +18,7 @@ db = mysql.connector.connect(
     user="root",
     password="",
     database="chatapp"
+    database="chatapp"
 )
 
 cursor = db.cursor()
@@ -165,6 +166,10 @@ class Chat:
             # Local Group-related
             elif (command=='getgroups'):
                 return self.get_groups()
+            
+            elif (command == "getme"):
+                tokenid = j[1].strip()
+                return self.get_me(tokenid)
             
             elif (command=='addgroup'):
                 sessionid = j[1].strip()
@@ -478,12 +483,13 @@ class Chat:
                 }
         return {"status": "OK", "message": self.users}
 
-    def get_me(self, sessionid):
-        data = self.sessions[sessionid]
+
+    def get_me(self, tokenid):
+        data = self.sessions[tokenid]
         if (bool(data) == True):
             return {"status": "OK", "message": data}
         else:
-            return {"status": "Error", "message": "User tidak ditemukan"}        
+            return {"status": "Error", "message": "User tidak ditemukan"}
     # FITUR AUTENTIKASI BARU
     def register(self, username, email, password):
         username = username.replace("-", " ")
@@ -1267,4 +1273,3 @@ class Chat:
                 })
 
         return {'status': 'OK', 'files': file_list}
-
