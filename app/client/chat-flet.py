@@ -21,6 +21,13 @@ class Message():
         self.text = text
         self.message_type = message_type
 
+class GroupMessage():
+    def __init__(self, groupname: str, username: str, text: str, message_type: str ="group_message"):
+        self.groupname = groupname
+        self.username = username
+        self.text = text
+        self.message_type = message_type
+
 class ChatMessage(ft.Row):
     def __init__(self, message: Message):
         super().__init__()
@@ -61,6 +68,48 @@ class ChatMessage(ft.Row):
             ft.colors.YELLOW,
         ]
         return colors_lookup[hash(user_name) % len(colors_lookup)]
+
+class GroupChatMessage(ft.Row):
+    def __init__(self, message: GroupMessage):
+        super().__init__()
+        self.vertical_alignment = ft.CrossAxisAlignment.START
+        self.controls=[
+            ft.CircleAvatar(
+                content=ft.Text(self.get_initials(message.username)),
+                color=ft.colors.WHITE,
+                bgcolor=self.get_avatar_color(message.username),
+            ),
+            ft.Column(
+                [
+                    ft.Text(message.username, weight="bold"),
+                    ft.Text(message.text, selectable=True),
+                ],
+                tight=True,
+                spacing=5,
+            ),
+        ]
+
+    def get_initials(self, user_name: str):
+        return user_name[:1].capitalize()
+
+    def get_avatar_color(self, user_name: str):
+        colors_lookup = [
+            ft.colors.AMBER,
+            ft.colors.BLUE,
+            ft.colors.BROWN,
+            ft.colors.CYAN,
+            ft.colors.GREEN,
+            ft.colors.INDIGO,
+            ft.colors.LIME,
+            ft.colors.ORANGE,
+            ft.colors.PINK,
+            ft.colors.PURPLE,
+            ft.colors.RED,
+            ft.colors.TEAL,
+            ft.colors.YELLOW,
+        ]
+        return colors_lookup[hash(user_name) % len(colors_lookup)]
+
 
 class ChatApp():
     def __init__(self):
@@ -132,6 +181,20 @@ class ChatApp():
 
         threading.Thread(target=receive_messages, daemon=True).start()
 
+    def start_receiving_group_messages(self):
+        print("start_receiving_group_messages")
+        def receive_group_messages():
+            print("Thread started")
+            while True:
+                response = self.cc.proses("group inbox " + self.groupname_dest)
+                print("response group inbox", response)
+                self.display_message(response)
+
+                time.sleep(1)
+
+        threading.Thread(target=receive_group_messages, daemon=True).start()
+    
+
     def display_message(self, message):
         if message['status']:
             if message['status'] == "OK":
@@ -141,6 +204,8 @@ class ChatApp():
                     self.chat.controls.append(ChatMessage(Message(chat_message['msg_from'], chat_message['msg'])))
                 
         self.page.update()
+
+    
 
     def register_page(self):
         register = ft.Column()
