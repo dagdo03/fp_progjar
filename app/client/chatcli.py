@@ -98,6 +98,7 @@ class ChatClient:
                 realm_id=j[1].strip()
                 realm_address=j[2].strip()
                 realm_port=j[3].strip()
+                print (realm_id, realm_address, realm_port)
                 return self.addrealm(realm_id,realm_address,realm_port)
                 
             elif (command=='checkrealm'):
@@ -389,7 +390,7 @@ class ChatClient:
 
 
 if __name__ == "__main__":
-    TARGET_IP = "127.0.0.1"  # Default IP address
+    TARGET_IP = "127.0.0.2"  # Default IP address
     TARGET_PORT = 8000       # Default port number
 
     cc = ChatClient(TARGET_IP, TARGET_PORT)
