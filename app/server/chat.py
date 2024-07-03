@@ -17,8 +17,7 @@ db = mysql.connector.connect(
     host="localhost",
     user="root",
     password="",
-    database="chatapp"
-    database="chatapp"
+    database="chatapp2"
 )
 
 cursor = db.cursor()

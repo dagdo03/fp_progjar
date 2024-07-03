@@ -431,27 +431,27 @@ class ChatApp():
 
         
 
-    def groups_page(self):
-        groups = self.cc.proses("group get")
-        print("GROUPS", groups)
+    # def groups_page(self):
+    #     groups = self.cc.proses("group get")
+    #     print("GROUPS", groups)
 
-        list_groups = ft.ListView(
-            expand=True,
-            spacing=10,
-            auto_scroll=True,
-        )
+    #     list_groups = ft.ListView(
+    #         expand=True,
+    #         spacing=10,
+    #         auto_scroll=True,
+    #     )
 
-        for group in list(groups.keys()):
-            group = groups[group]
-            print("TEST GROUP", group)
-            group_message = GroupChatMessage(GroupMessage(group['nama'], group['nama'], group['password']))
-            container = ft.Container(
-                content=group_message,
-                on_click=lambda e, groupname_dest=group['nama']: self.join_group_dialog(e, groupname_dest),
-            )
-            list_groups.controls.append(container)
+    #     for group in list(groups.keys()):
+    #         group = groups[group]
+    #         print("TEST GROUP", group)
+    #         group_message = GroupChatMessage(GroupMessage(group['nama'], group['nama'], group['password']))
+    #         container = ft.Container(
+    #             content=group_message,
+    #             on_click=lambda e, groupname_dest=group['nama']: self.join_group_dialog(e, groupname_dest),
+    #         )
+    #         list_groups.controls.append(container)
 
-        return list_groups
+    #     return list_groups
     
     def profile_page(self):
             user = ft.Column()
@@ -517,31 +517,6 @@ class ChatApp():
         self.start_receiving_messages("personal")
 
 
-<<<<<<< HEAD
-=======
-    def groups_page(self):
-        # Fetch groups from the server using ChatClient
-        groups = self.cc.proses("group get")
-        print("GROUPS", groups)
-
-        list_groups = ft.ListView(
-            expand=True,
-            spacing=10,
-            auto_scroll=True,
-        )
-
-        # Iterate over the groups retrieved and create UI elements to display them
-        for group_name in groups:
-            group_info = groups[group_name]
-            group_container = ft.Container(
-                content=ft.Text(group_name),
-                on_click=lambda e, groupname=group_name: self.join_group_dialog(e, groupname),
-            )
-            list_groups.controls.append(group_container)
-
-        return list_groups
-
->>>>>>> 3b8d8b0 (fix reabse chat-flet)
     def join_group_dialog(self, e, groupname):
         self.groupname_dest = groupname
         
