@@ -207,6 +207,8 @@ class Chat:
                 src_port = int(j[5].strip())
                 logging.warning("ADDREALM: {}:{} add realm {} to {}:{}" . format(src_address, src_port, realm_id, realm_address, realm_port))
                 return self.add_realm(realm_id, realm_address, realm_port, src_address, src_port)
+                logging.warning("ADDREALM: {}:{} add realm {} to {}:{}" . format(src_address, src_port, realm_id, realm_address, realm_port))
+                return self.add_realm(realm_id, realm_address, realm_port, src_address, src_port)
 
             elif (command=='ackrealm'):
                 realm_id = j[1].strip()
@@ -792,6 +794,16 @@ class Chat:
     def add_realm(self,realm_id,realm_address,realm_port,src_address,src_port):
         if (realm_id in self.realms_info):
             return { 'status': 'ERROR', 'message': 'Realm sudah ada' }
+        try:
+            self.realms[realm_id] = RealmThreadCommunication(self, realm_address, realm_port)
+            result = self.realms[realm_id].sendstring("ackrealm {} {} {} {} {}\r\n" . format(realm_id, realm_address, realm_port, src_address, src_port))
+            if result['status']=='OK':
+                self.realms_info[realm_id] = {'serverip': realm_address, 'port': realm_port}
+                return result
+            else:
+                return {'status': 'ERROR', 'message': 'Realm unreachable'}
+        except:
+            return {'status': 'ERROR', 'message': 'Realm unreachable'}
         try:
             self.realms[realm_id] = RealmThreadCommunication(self, realm_address, realm_port)
             result = self.realms[realm_id].sendstring("ackrealm {} {} {} {} {}\r\n" . format(realm_id, realm_address, realm_port, src_address, src_port))

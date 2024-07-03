@@ -93,6 +93,7 @@ class ChatClient:
                 realm_id=j[1].strip()
                 realm_address=j[2].strip()
                 realm_port=j[3].strip()
+                print (realm_id, realm_address, realm_port)
                 return self.addrealm(realm_id,realm_address,realm_port)
                 
             elif (command=='checkrealm'):
