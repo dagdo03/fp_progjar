@@ -618,3 +618,5 @@ if __name__ == "__main__":
     while True:
         cmdline = input("Command {}:" . format(cc.tokenid))
         print(cc.proses(cmdline))
+
+

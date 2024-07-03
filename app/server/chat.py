@@ -10,7 +10,7 @@ from queue import  Queue
 import mysql.connector
 from datetime import datetime
 
-
+ 
 
 # Database connection setup
 db = mysql.connector.connect(
