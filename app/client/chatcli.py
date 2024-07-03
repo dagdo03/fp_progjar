@@ -50,9 +50,6 @@ class ChatClient:
             elif (command=="users"):
                 return self.get_users()
             
-            elif (command == "getme"):
-                return self.get_me()
-            
             elif (command == "register"):
                 username = j[1].strip()
                 email = j[2].strip()
@@ -118,8 +115,10 @@ class ChatClient:
             elif (command=='inboxrealm'):
                 realm_id=j[1].strip()
                 return self.inboxrealm(realm_id)
+            
             elif (command == "getme"):
                 return self.get_me()
+            
             elif command == 'sendgrouprealm':
                 realm_id = j[1].strip()
                 groupname = j[2].strip()
