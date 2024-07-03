@@ -70,5 +70,5 @@ def main(addressnumber, portnumber):
 
 if __name__=="__main__":
     portnumber = 8000 # Default value
-    addressnumber = '127.0.0.1' # Default   
+    addressnumber = '0.0.0.0' # Default   
     main(addressnumber, portnumber)
