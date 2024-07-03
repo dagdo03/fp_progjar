@@ -209,8 +209,8 @@ class Chat:
                 realm_port = int(j[3].strip())
                 src_address = j[4].strip()
                 src_port = int(j[5].strip())
-                logging.warning("ADDREALM: {}:{} add realm {} to {}:{}" . format(realm_id, realm_address, realm_port))
-                return self.add_realm(realm_id, realm_address, realm_port)
+                logging.warning("ADDREALM: {}:{} add realm {} to {}:{}" . format(src_address, src_port, realm_id, realm_address, realm_port))
+                return self.add_realm(realm_id, realm_address, realm_port, src_address, src_port)
 
             elif (command=='ackrealm'):
                 realm_id = j[1].strip()
@@ -823,6 +823,17 @@ class Chat:
 
         return {'status': 'OK', 'messages': msgs}
 
+<<<<<<< HEAD
+=======
+    # def register(self, username, email, password):
+    #     username = username.replace("-", " ")
+    #     if username in self.users:
+    #         return {"status": "ERROR", "message": "User Sudah Terdaftar"}
+    #     # self.users[username] = {"nama": nama, "negara": negara, "password": password, "incoming": {}, "outgoing": {}}
+    #     cursor.execute("INSERT INTO users (username, email, password_hash, created_at) VALUES (%s, %s, %s, %s)", (username, email, password, datetime.now()))
+    #     db.commit()
+
+>>>>>>> 17a8d22 (feature for multrealm)
     def add_realm(self,realm_id,realm_address,realm_port,src_address,src_port):
         if (realm_id in self.realms_info):
             return { 'status': 'ERROR', 'message': 'Realm sudah ada' }
