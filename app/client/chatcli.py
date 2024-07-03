@@ -7,7 +7,7 @@ import base64
 import threading
 import shlex
 
-TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.2"
+TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.1"
 TARGET_PORT = os.getenv("SERVER_PORT") or "8889"
 
 
@@ -49,6 +49,9 @@ class ChatClient:
             elif (command=="users"):
                 return self.get_users()
             
+            elif (command == "getme"):
+                return self.get_me()
+            
             elif (command == "register"):
                 username = j[1].strip()
                 email = j[2].strip()
@@ -56,8 +59,10 @@ class ChatClient:
                 print(username, email, password)
 
                 return self.register(username, email, password)
-            elif (command=='logout'):
-                pass
+            
+            elif (command == "logout"):
+                tokenid = j[1].strip()
+                return self.logout(tokenid)
             
             elif (command == "group"):
                 print(j)
@@ -231,6 +236,10 @@ class ChatClient:
             self.sock2.close()
             return { 'status' : 'ERROR', 'message' : 'Gagal'}
           
+    def is_login(self):
+        if self.tokenid is None or self.tokenid == "":
+            return False, "Error, User not authenticated."
+        return True, None   
 
     def login(self,username,password):
         string="auth {} {} \r\n" . format(username,password)
@@ -606,10 +615,7 @@ class ChatClient:
 
 
 if __name__ == "__main__":
-    TARGET_IP = "127.0.0.1"  # Default IP address
-    TARGET_PORT = 8000       # Default port number
-
-    cc = ChatClient(TARGET_IP, TARGET_PORT)
+    cc = ChatClient()
     while True:
         cmdline = input("Command {}:" . format(cc.tokenid))
         print(cc.proses(cmdline))

@@ -7,12 +7,12 @@ import base64
 import threading
 import shlex
 
-# TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.1"
-# TARGET_PORT = os.getenv("SERVER_PORT") or "8889"
+TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.2"
+TARGET_PORT = os.getenv("SERVER_PORT") or "8889"
 
 
 class ChatClient:
-    def __init__(self, TARGET_IP, TARGET_PORT):
+    def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print(TARGET_IP)
@@ -60,8 +60,8 @@ class ChatClient:
 
                 return self.register(username, email, password)
             
-            elif (command=='logout'):
-                tokenid = self.tokenid
+            elif (command == "logout"):
+                tokenid = j[1].strip()
                 return self.logout(tokenid)
             
             elif (command == "group"):
@@ -235,11 +235,11 @@ class ChatClient:
         except:
             self.sock2.close()
             return { 'status' : 'ERROR', 'message' : 'Gagal'}
-
+          
     def is_login(self):
         if self.tokenid is None or self.tokenid == "":
             return False, "Error, User not authenticated."
-        return True, None         
+        return True, None   
 
     def login(self,username,password):
         string="auth {} {} \r\n" . format(username,password)
@@ -276,7 +276,6 @@ class ChatClient:
             return result["message"]
         else:
             return "Error, {}".format(result["message"])
-    
     # Fitur autentikasi tambahan
     def register(self, username, email, password):
         print("PLISS MASUKKKK")
@@ -289,12 +288,8 @@ class ChatClient:
         else:
             return "Error, {}".format(result["message"])
         
-    def logout(self, tokenid):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        
-        string = "logout {}\r\n".format(tokenid)
+    def logout(self):
+        string = "logout \r\n"
         result = self.sendstring(string)
         if result["status"] == "OK":
             self.tokenid = ""
@@ -303,12 +298,8 @@ class ChatClient:
             return "Error, {}".format(result["message"])
 
     def sendmessage(self,usernameto="xxx",message="xxx"):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="send {} {} {} \r\n" . format(self.tokenid,usernameto,message)
         print(string)
         result = self.sendstring(string)
@@ -318,12 +309,8 @@ class ChatClient:
             return "Error, {}" . format(result['message'])
 
     def inbox(self, username_from):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-    
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="inbox {} {}\r\n" . format(self.tokenid, username_from)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -334,22 +321,14 @@ class ChatClient:
     
     # Local Group-related
     def getgroups(self):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        
         string = "getgroups {} \r\n"
         result = self.sendstring(string)
         if result["status"] == "OK":
             return result["message"]
     
     def addgroup(self, groupname, password):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="addgroup {} {} {} \r\n" . format(self.tokenid, groupname, password)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -358,12 +337,8 @@ class ChatClient:
             return "Error, {}" . format(result['message'])
         
     def joingroup(self, groupname, password):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="joingroup {} {} {} \r\n" . format(self.tokenid, groupname, password)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -372,11 +347,8 @@ class ChatClient:
             return "Error, {}" . format(result['message'])
     
     def sendgroup(self, groupname, message):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="sendgroup {} {} {} \r\n" . format(self.tokenid, groupname, message)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -385,15 +357,12 @@ class ChatClient:
             return "Error, {}" . format(result['message'])
         
     def inboxgroup(self, groupname):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="inboxgroup {} {}\r\n" . format(self.tokenid, groupname)
         result = self.sendstring(string)
         if result['status']=='OK':
-            return "{}" . format(json.dumps(result['messages']))
+            return {'status': 'OK', "messages":result['messages']}
         else:
             return "Error, {}" . format(result['message'])
 
@@ -646,11 +615,7 @@ class ChatClient:
 
 
 if __name__ == "__main__":
-    TARGET_IP = "127.0.0.2"  # Default IP address
-    TARGET_PORT = 8000       # Default port number
-
-    cc = ChatClient(TARGET_IP, TARGET_PORT)
+    cc = ChatClient()
     while True:
-        cmdline = input("Command {}:".format(cc.tokenid))
+        cmdline = input("Command {}:" . format(cc.tokenid))
         print(cc.proses(cmdline))
-

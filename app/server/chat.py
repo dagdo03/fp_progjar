@@ -17,7 +17,7 @@ db = mysql.connector.connect(
     host="localhost",
     user="root",
     password="",
-    database="chatapp2"
+    database="chatapp"
 )
 
 cursor = db.cursor()
@@ -129,6 +129,10 @@ class Chat:
             
             elif (command == "users"):
                 return self.get_users()
+            
+            elif (command == "getme"):
+                sessionid = j[1].strip()
+                return self.get_me(sessionid)
             
             # Fitur Baru Autentikasi
             elif command == "register":
@@ -418,7 +422,7 @@ class Chat:
             elif command == 'listfile':
                 sessionid = j[1].strip()
                 logging.warning("LISTFILE: session {}".format(sessionid))
-                return self.list_files(sessionid)
+                return self.list_file(sessionid)
             
             elif (command=='listgroupfile'):
                 sessionid = j[1].strip()
@@ -477,6 +481,12 @@ class Chat:
                 }
         return {"status": "OK", "message": self.users}
 
+    def get_me(self, sessionid):
+        data = self.sessions[sessionid]
+        if (bool(data) == True):
+            return {"status": "OK", "message": data}
+        else:
+            return {"status": "Error", "message": "User tidak ditemukan"}        
     # FITUR AUTENTIKASI BARU
     def register(self, username, email, password):
         username = username.replace("-", " ")
@@ -633,7 +643,7 @@ class Chat:
         # if groups not exist in self.groups
         for group in groups:
             # get group members
-            cursor.execute("SELECT * WHERE group_id=%s", (group[0],))
+            cursor.execute("SELECT * FROM group_members WHERE group_id=%s", (group[0],))
             members_all = cursor.fetchall()
             print("members_all: ", members_all)
             
