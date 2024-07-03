@@ -240,8 +240,7 @@ class Chat:
                 username = self.sessions[sessionid]['username']
                 logging.warning("GETREALMINBOX: {} from realm {}".format(sessionid, realmid))
                 return self.get_realm_inbox(username, realmid)
-            
-            
+
             elif (command == 'getrealmchat'):
                 realmid = j[1].strip()
                 username = j[2].strip()

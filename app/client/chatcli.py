@@ -222,7 +222,25 @@ class ChatClient:
             return "Error, {}" . format(result['message'])
         
     def get_users(self):
-        string = "users {} \r\n"
+        #print("halloooo {}".format(self.tokenid))
+        authenticated, error_message = self.is_login()
+        #print("apakah ini benar {} {}".format(authenticated, error_message))
+        if not authenticated:
+            return error_message
+        
+        string = "users \r\n"
+        result = self.sendstring(string)
+        if result["status"] == "OK":
+            return result["message"]
+        else:
+            return "Error, {}".format(result["message"])      
+    
+    def get_me(self):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "getme {} \r\n".format(self.tokenid)
         result = self.sendstring(string)
         if result["status"] == "OK":
             return result["message"]
