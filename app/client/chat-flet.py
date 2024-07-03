@@ -134,7 +134,7 @@ class ChatApp():
         
     def main(self, page: ft.Page):
         print("main")
-        
+
         def on_message(message: Message):
             if message.message_type == "chat_message":
                 m = ChatMessage(message)
@@ -166,7 +166,7 @@ class ChatApp():
             self.page.add(self.chats_page())
         else:
             self.page.add(self.login_page())
-            self.page.add(self.navigation_bar)
+            # self.page.add(self.navigation_bar)
 
         self.page.pubsub.subscribe(on_message)
         self.page.update()
@@ -181,7 +181,7 @@ class ChatApp():
                 print("response inbox", response)
                 self.display_message(response)
 
-                time.sleep(1)
+                time.sleep(3)
 
         threading.Thread(target=receive_messages, daemon=True).start()
 
@@ -517,6 +517,31 @@ class ChatApp():
         self.start_receiving_messages("personal")
 
 
+<<<<<<< HEAD
+=======
+    def groups_page(self):
+        # Fetch groups from the server using ChatClient
+        groups = self.cc.proses("group get")
+        print("GROUPS", groups)
+
+        list_groups = ft.ListView(
+            expand=True,
+            spacing=10,
+            auto_scroll=True,
+        )
+
+        # Iterate over the groups retrieved and create UI elements to display them
+        for group_name in groups:
+            group_info = groups[group_name]
+            group_container = ft.Container(
+                content=ft.Text(group_name),
+                on_click=lambda e, groupname=group_name: self.join_group_dialog(e, groupname),
+            )
+            list_groups.controls.append(group_container)
+
+        return list_groups
+
+>>>>>>> 3b8d8b0 (fix reabse chat-flet)
     def join_group_dialog(self, e, groupname):
         self.groupname_dest = groupname
         
