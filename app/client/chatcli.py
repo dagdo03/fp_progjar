@@ -354,7 +354,7 @@ class ChatClient:
         string="inboxrealm {} {}\r\n" . format(self.tokenid, realm_id)
         result = self.sendstring(string)
         if result['status']=='OK':
-            return "{}" . format(json.dumps(result['messages']))
+            return result['messages']
         else:
             return "Error, {}" . format(result['message'])
         
