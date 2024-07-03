@@ -669,7 +669,7 @@ class Chat:
             return { 'status': 'ERROR', 'message': 'Group belum ada' }
         
         # check if password is wrong
-        if (group[3] != password):
+        if (group[2] != password):
             return { 'status': 'ERROR', 'message': 'Password Salah' }
         
         # check if user already join the group
