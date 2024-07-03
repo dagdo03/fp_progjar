@@ -391,11 +391,6 @@ if __name__ == "__main__":
     TARGET_IP = "127.0.0.1"  # Default IP address
     TARGET_PORT = 8000       # Default port number
 
-    # Check if command-line arguments are provided
-    if len(sys.argv) > 2:
-        TARGET_IP = sys.argv[1]
-        TARGET_PORT = sys.argv[2]
-
     cc = ChatClient(TARGET_IP, TARGET_PORT)
     while True:
         cmdline = input("Command {}:".format(cc.tokenid))

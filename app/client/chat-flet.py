@@ -11,8 +11,8 @@ import json
 
 from chatcli import ChatClient
 
-# TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.1"
-# TARGET_PORT = os.getenv("SERVER_PORT") or "8889"
+TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.1"
+TARGET_PORT = os.getenv("SERVER_PORT") or "8000"
 ON_WEB = os.getenv("ONWEB") or "0"
 
 class Message():
@@ -63,7 +63,7 @@ class ChatMessage(ft.Row):
         return colors_lookup[hash(user_name) % len(colors_lookup)]
 
 class ChatApp():
-    def __init__(self, TARGET_IP, TARGET_PORT):
+    def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_address = (TARGET_IP, int(TARGET_PORT))
         try:
@@ -337,12 +337,11 @@ class ChatApp():
         self.page.add(self.navigation_bar)
         self.start_receiving_messages("group")
 
-if __name__=='main_':
+if __name__ == "__main__":
+    print("trying to connect ..")
     if (ON_WEB=="1"):
         ft.app(target=ChatApp().main,view=ft.WEB_BROWSER,port=8550)
     else:
-        if len(sys.argv) > 2:
-            TARGET_IP = sys.argv[1]
-            TARGET_PORT = sys.argv[2]
-        ft.app(target=ChatApp(TARGET_IP, TARGET_PORT).main)
-    
+        print("connecting")
+        ft.app(target=ChatApp().main)
+        print("connected")
