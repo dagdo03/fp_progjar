@@ -5,6 +5,7 @@ import sys
 import ntpath
 import base64
 import threading
+import shlex
 
 TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.2"
 TARGET_PORT = os.getenv("SERVER_PORT") or "8889"
@@ -28,7 +29,7 @@ class ChatClient:
         self.listener_thread.start()
 
     def proses(self,cmdline):
-        j=cmdline.split(" ")
+        j = shlex.split(cmdline)
         try:
             command=j[0].strip()
             if (command=='auth'):
@@ -174,6 +175,25 @@ class ChatClient:
                 savepath=j[5].strip()
                 return self.downloadgrouprealmfile(realm_id,groupname,fileid,filename,savepath)
             
+            elif (command == 'listfile'):
+                tokenid = self.tokenid
+                return self.listfile(tokenid)
+            
+            elif (command == 'listgroupfile'):
+                tokenid = self.tokenid
+                groupname = j[1].strip()
+                return self.listgroupfile(tokenid, groupname)
+
+            elif command == 'listrealmfile':
+                tokenid = self.tokenid
+                realm_id = j[1].strip()
+                return self.listrealmfile(tokenid, realm_id)
+
+            elif command == 'listgrouprealmfile':
+                tokenid = self.tokenid
+                groupname = j[1].strip()
+                realm_id = j[2].strip()
+                return self.listgrouprealmfile(tokenid, groupname, realm_id)
 
             else:
                 return "*Maaf, command tidak benar"
@@ -396,6 +416,8 @@ class ChatClient:
             return "{}" . format(json.dumps(result['messages']))
         else:
             return "Error, {}" . format(result['message'])
+  
+# =================== FILE PROTOCOL ===========================
     def path_leaf(self,path):
         head, tail = ntpath.split(path)
         return tail or ntpath.basename(head)
@@ -407,6 +429,7 @@ class ChatClient:
         with open(filepath, 'rb') as fp:
             filecontent = base64.b64encode(fp.read()).decode('utf-8')
         filename = self.path_leaf(filepath)
+        print("test print from sendfile", filename, filecontent)
         string="sendfile {} {} {} {}\r\n" . format(self.tokenid,usernameto,filename,filecontent)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -523,11 +546,70 @@ class ChatClient:
                 return "Error while saving the file: {}".format(str(e))
         else:
             return "Error, {}" . format(result['message'])
-  
+        
+# =================== LIST FILE PROTOCOL ===========================
+    def listfile(self, tokenid):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listfile {}\r\n".format(tokenid)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
+        
+    def listgroupfile(self, tokenid, groupname):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listgroupfile {} {}\r\n".format(tokenid, groupname)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
+
+    def listrealmfile(self, tokenid, realm_id):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listrealmfile {} {}\r\n".format(tokenid, realm_id)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
+
+    def listgrouprealmfile(self, tokenid, groupname, realm_id):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listgrouprealmfile {} {} {}\r\n".format(tokenid, groupname, realm_id)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
 
 
-if __name__=="__main__":
-    cc = ChatClient()
+if __name__ == "__main__":
+    TARGET_IP = "127.0.0.1"  # Default IP address
+    TARGET_PORT = 8000       # Default port number
+
+    cc = ChatClient(TARGET_IP, TARGET_PORT)
     while True:
         cmdline = input("Command {}:" . format(cc.tokenid))
         print(cc.proses(cmdline))

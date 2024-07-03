@@ -22,7 +22,6 @@ db = mysql.connector.connect(
 
 cursor = db.cursor()
 
-cursor.execute("SELECT * FROM realms WHERE realm_address = '127.0.0.1' AND realm_port = '8000'")
 
 class RealmThreadCommunication(threading.Thread):
     def __init__(self, chats, realm_dest_address, realm_dest_port):
@@ -243,7 +242,8 @@ class Chat:
                 username = self.sessions[sessionid]['username']
                 logging.warning("GETREALMINBOX: {} from realm {}".format(sessionid, realmid))
                 return self.get_realm_inbox(username, realmid)
-
+            
+            
             elif (command == 'getrealmchat'):
                 realmid = j[1].strip()
                 username = j[2].strip()
@@ -414,8 +414,31 @@ class Chat:
                 logging.warning("REMOTEDOWNLOADGROUPREALMFILE: groupname {} realm {}" . format(groupname, realm_id))
                 return self.remote_download_group_realm_file(groupname,realm_id,fileid,filename)
             
+# ============= LIST FILE ==================================== 
+            elif command == 'listfile':
+                sessionid = j[1].strip()
+                logging.warning("LISTFILE: session {}".format(sessionid))
+                return self.list_files(sessionid)
+            
+            elif (command=='listgroupfile'):
+                sessionid = j[1].strip()
+                groupname = j[2].strip()
+                logging.warning("LISTGROUPFILE: session {} list files in group {}" . format(sessionid, groupname))
+                return self.list_group_file(sessionid, groupname)
+            
+            elif (command == 'listrealmfile'):
+                sessionid = j[1].strip()
+                realmid = j[2].strip()
+                logging.warning("LISTREALMFILE: session {} in realm {}".format(sessionid, realmid))
+                return self.list_realm_file(sessionid, realmid)
 
-
+            elif (command == 'listgrouprealmfile'):
+                sessionid = j[1].strip()
+                groupname = j[2].strip()
+                realmid = j[3].strip()
+                logging.warning("LISTGROUPREALMFILE: session {} list files in group {} in realm {}".format(sessionid, groupname, realmid))
+                return self.list_group_realm_file(sessionid, groupname, realmid)
+            
         except KeyError:
             return { 'status': 'ERROR', 'message' : 'Informasi tidak ditemukan'}
         except IndexError:
@@ -474,9 +497,9 @@ class Chat:
         self.sessions[tokenid]={ 'username': username, 'userdetail':self.users[username]}
         return {"status": "OK", "tokenid": tokenid}
     
-    def logout(self):
-        if bool(self.sessions) == True:
-            self.sessions.clear()
+    def logout(self, tokenid):
+        if tokenid in self.sessions:
+            del self.sessions[tokenid]
             return {"status": "OK"}
         else:
             return {"status": "ERROR", "message": "User Belum Login"}
@@ -610,7 +633,7 @@ class Chat:
         # if groups not exist in self.groups
         for group in groups:
             # get group members
-            cursor.execute("SELECT * FROM group_members WHERE group_id=%s", (group[0],))
+            cursor.execute("SELECT * WHERE group_id=%s", (group[0],))
             members_all = cursor.fetchall()
             print("members_all: ", members_all)
             
@@ -775,20 +798,20 @@ class Chat:
                 'created_at': chat_date
             })
 
-        # if (sessionid not in self.sessions):
-        #     return {'status': 'ERROR', 'message': 'Session Tidak Ditemukan'}
-        # if (groupname not in self.groups):
-        #     return { 'status': 'ERROR', 'message': 'Group belum ada' }
-        # if (username not in self.groups[groupname]['members']):
-        #     return { 'status': 'ERROR', 'message': 'Bukan member group' }
-        # s_fr = self.get_group(groupname)
-        # incoming = s_fr['incoming']
-        # msgs={}
-        # for users in incoming:
-        #     msgs[users]=[]
-        #     temp_queue = incoming[users].queue.copy()
-        #     while len(temp_queue) > 0:
-        #         msgs[users].append(temp_queue.pop())
+        if (sessionid not in self.sessions):
+            return {'status': 'ERROR', 'message': 'Session Tidak Ditemukan'}
+        if (groupname not in self.groups):
+            return { 'status': 'ERROR', 'message': 'Group belum ada' }
+        if (username not in self.groups[groupname]['members']):
+            return { 'status': 'ERROR', 'message': 'Bukan member group' }
+        s_fr = self.get_group(groupname)
+        incoming = s_fr['incoming']
+        msgs={}
+        for users in incoming:
+            msgs[users]=[]
+            temp_queue = incoming[users].queue.copy()
+            while len(temp_queue) > 0:
+                msgs[users].append(temp_queue.pop())
 
         return {'status': 'OK', 'messages': msgs}
 
@@ -1132,4 +1155,110 @@ class Chat:
     
     def get_realms(self):
         return {"status": "OK", "message": self.realms}
-    
+
+# ========================= LIST FILE PROTOCOL =========================
+    def list_file(self, sessionid):
+        if sessionid not in self.sessions:
+            return {'status': 'ERROR', 'message': 'Session Tidak Ditemukan'}
+        
+        username = self.sessions[sessionid]['username']
+        user = self.get_user(username)
+        
+        if not user:
+            return {'status': 'ERROR', 'message': 'User Tidak Ditemukan'}
+        
+        incoming = user['incoming']
+        file_list = []
+
+        for sender in incoming:
+            temp_queue = list(incoming[sender].queue)
+            for msg in temp_queue:
+                if 'fileid' in msg:
+                    file_list.append({
+                        'fileid': msg['fileid'],
+                        'filename': msg['filename'],
+                        'from': msg['msg_from']
+                    })
+
+        return {'status': 'OK', 'files': file_list}
+
+    def list_group_file(self, sessionid, groupname):
+        if (sessionid not in self.sessions):
+            return {'status': 'ERROR', 'message': 'Session Tidak Ditemukan'}
+        if (groupname not in self.groups):
+            return { 'status': 'ERROR', 'message': 'Group belum ada' }
+        username = self.sessions[sessionid]['username']
+        if (username not in self.groups[groupname]['members']):
+            return { 'status': 'ERROR', 'message': 'Bukan member group' }
+        group = self.get_group(groupname)
+        incoming = group['incoming']
+        file_list = []
+        for users in incoming:
+            temp_queue = incoming[users].queue.copy()
+            while len(temp_queue) > 0:
+                msg = temp_queue.pop()
+                if 'fileid' in msg:
+                    file_list.append({'from': msg['msg_from'], 'filename': msg['filename'], 'fileid': msg['fileid']})
+        return {'status': 'OK', 'files': file_list}
+
+    def list_realm_file(self, sessionid, realmid):
+        if sessionid not in self.sessions:
+            return {'status': 'ERROR', 'message': 'Session Tidak Ditemukan'}
+        
+        if realmid not in self.realms_info:
+            return {'status': 'ERROR', 'message': 'Realm belum ada'}
+        
+        username = self.sessions[sessionid]['username']
+        user = self.get_user(username)
+        
+        if not user:
+            return {'status': 'ERROR', 'message': 'User Tidak Ditemukan'}
+        
+        if realmid not in self.realms:
+            return {'status': 'ERROR', 'message': 'Realm Tidak Ditemukan'}
+        
+        incoming = self.realms[realmid].chat['users'][username].queue.copy()
+        file_list = []
+
+        while len(incoming) > 0:
+            msg = incoming.pop()
+            if 'fileid' in msg:
+                file_list.append({
+                    'fileid': msg['fileid'],
+                    'filename': msg['filename'],
+                    'from': msg['msg_from']
+                })
+
+        return {'status': 'OK', 'files': file_list}
+
+    def list_group_realm_file(self, sessionid, groupname, realmid):
+        if sessionid not in self.sessions:
+            return {'status': 'ERROR', 'message': 'Session Tidak Ditemukan'}
+        
+        if realmid not in self.realms_info:
+            return {'status': 'ERROR', 'message': 'Realm belum ada'}
+        
+        if groupname not in self.groups:
+            return {'status': 'ERROR', 'message': 'Group belum ada'}
+        
+        username = self.sessions[sessionid]['username']
+        if username not in self.groups[groupname]['members']:
+            return {'status': 'ERROR', 'message': 'Bukan member group'}
+        
+        if realmid not in self.realms:
+            return {'status': 'ERROR', 'message': 'Realm Tidak Ditemukan'}
+        
+        incoming = self.realms[realmid].chat['groups'][groupname].queue.copy()
+        file_list = []
+
+        while len(incoming) > 0:
+            msg = incoming.pop()
+            if 'fileid' in msg:
+                file_list.append({
+                    'fileid': msg['fileid'],
+                    'filename': msg['filename'],
+                    'from': msg['msg_from']
+                })
+
+        return {'status': 'OK', 'files': file_list}
+
