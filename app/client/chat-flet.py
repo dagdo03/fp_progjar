@@ -155,6 +155,7 @@ class ChatApp():
                 ft.NavigationBarDestination(icon=ft.icons.GROUP, label="Add Group"),
                 ft.NavigationBarDestination(icon=ft.icons.GROUP, label="Add Realm"),
                 ft.NavigationBarDestination(icon=ft.icons.GROUP, label="Chat Realm"),
+                ft.NavigationBarDestination(icon=ft.icons.PERSON, label="Profile")
             ],
         )
         
@@ -319,6 +320,10 @@ class ChatApp():
             self.page.controls.clear()
             self.page.add(self.navigation_bar)
             self.page.add(self.inbox_realm())
+        elif e.control.selected_index == 5:
+            self.page.controls.clear()
+            self.page.add(self.navigation_bar)
+            self.page.add(self.profile_page())
         self.page.update()
 
     def chats_page(self):
@@ -447,6 +452,41 @@ class ChatApp():
             list_groups.controls.append(container)
 
         return list_groups
+    
+    def profile_page(self):
+            user = ft.Column()
+        
+        # Fetch profile data
+            profile = self.cc.proses("getme")
+            print("User Profile:", profile)
+        
+        # Check if profile and userdetail are not None
+            if profile and profile.get('userdetail'):
+                profile_data = profile.get('userdetail').get('nama')  # Assuming 'nama' is the key for name in your profile data
+                print("Profile Data: ", profile_data)
+                email = profile.get('userdetail').get('email')
+            
+            # Check if profile_data is not None
+            if profile_data:
+                username = ft.Text(f"name: {profile_data}")
+                email = ft.Text(f"email: {email}")
+            else:
+                username = ft.Text("No name available")
+        
+            user.controls.append(username)
+            user.controls.append(email)
+            
+            def on_logout_click(e):
+                    string_send = f"logout"
+                    response = self.cc.proses(string_send)
+                    self.tokenid = None
+                    print(response)
+                    self.page.controls.clear()
+                    self.page.add(self.login_page())
+                    self.page.update()
+            logout_button = ft.ElevatedButton(text="Logout", on_click=on_logout_click)
+            user.controls.append(logout_button)
+            return user
 
     def dlg_modal(self, e, username_dest):
         self.username_dest = username_dest

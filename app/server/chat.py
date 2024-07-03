@@ -209,8 +209,8 @@ class Chat:
                 realm_port = int(j[3].strip())
                 src_address = j[4].strip()
                 src_port = int(j[5].strip())
-                logging.warning("ADDREALM: {}:{} add realm {} to {}:{}" . format(src_address, src_port, realm_id, realm_address, realm_port))
-                return self.add_realm(realm_id, realm_address, realm_port, src_address, src_port)
+                logging.warning("ADDREALM: {}:{} add realm {} to {}:{}" . format(realm_id, realm_address, realm_port))
+                return self.add_realm(realm_id, realm_address, realm_port)
 
             elif (command=='ackrealm'):
                 realm_id = j[1].strip()
