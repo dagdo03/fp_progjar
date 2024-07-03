@@ -511,6 +511,7 @@ class Chat:
         else:
             return {"status": "ERROR", "message": "User Belum Login"}
     
+    
     def get_user(self,username):
         # check if user is exist in database
         cursor.execute("SELECT * FROM users WHERE username=%s", (username,))
@@ -1150,9 +1151,9 @@ class Chat:
         #         return {'status': 'OK', 'message': msg['filecontent']}
         # return {'status': 'ERROR', 'message': 'File tidak ditemukan'}
     
+    
     def get_realms(self):
         return {"status": "OK", "message": self.realms}
-
 # ========================= LIST FILE PROTOCOL =========================
     def list_file(self, sessionid):
         if sessionid not in self.sessions:

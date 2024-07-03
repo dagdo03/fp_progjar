@@ -296,7 +296,8 @@ class ChatClient:
             return "user logged out"
         else:
             return "Error, {}".format(result["message"])
-
+        
+        
     def sendmessage(self,usernameto="xxx",message="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
