@@ -10,8 +10,8 @@ import os
 
 
 
-# SERVER_IP=os.getenv('SERVER_IP') or "0.0.0.0"
-# SERVER_PORT=os.getenv('SERVER_PORT') or "8889"
+SERVER_IP=os.getenv('SERVER_IP') or "0.0.0.0"
+SERVER_PORT=os.getenv('SERVER_PORT') or "8889"
 
 chatserver = Chat()
 
@@ -32,6 +32,7 @@ class ProcessTheClient(threading.Thread):
                 if rcv[-2:]=='\r\n':
                     #end of command, proses string
                     logging.warning("data dari client: {}" . format(rcv))
+                    print("data = ", rcv)
                     hasil = json.dumps(chatserver.proses(rcv))
                     hasil=hasil+"\r\n\r\n"
                     logging.warning("balas ke  client: {}" . format(hasil))
@@ -43,16 +44,14 @@ class ProcessTheClient(threading.Thread):
         self.connection.close()
 
 class Server(threading.Thread):
-    def __init__(self, TARGET_IP, TARGET_PORT):
-        self.TARGET_IP = TARGET_IP
-        self.TARGET_PORT = TARGET_PORT
+    def __init__(self):
         self.the_clients = []
         self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         threading.Thread.__init__(self)
 
     def run(self):
-        self.my_socket.bind((self.TARGET_IP,int(self.TARGET_PORT)))
+        self.my_socket.bind((SERVER_IP,int(SERVER_PORT)))
         self.my_socket.listen(1)
         while True:
             self.connection, self.client_address = self.my_socket.accept()
@@ -63,12 +62,10 @@ class Server(threading.Thread):
             self.the_clients.append(clt)
 
 
-def main(addressnumber, portnumber):
-    svr = Server(addressnumber, portnumber)
-    print("Server is running")
+def main():
+    svr = Server()
     svr.start()
 
 if __name__=="__main__":
-    portnumber = 8000 # Default value
-    addressnumber = '0.0.0.0' # Default   
-    main(addressnumber, portnumber)
+    main()
+

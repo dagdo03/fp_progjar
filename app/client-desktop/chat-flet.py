@@ -11,19 +11,12 @@ import json
 
 from chatcli import ChatClient
 
-TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.1"
+TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.2"
 TARGET_PORT = os.getenv("SERVER_PORT") or "8000"
 ON_WEB = os.getenv("ONWEB") or "0"
 
 class Message():
     def __init__(self, username: str, text: str, message_type: str ="chat_message"):
-        self.username = username
-        self.text = text
-        self.message_type = message_type
-
-class GroupMessage():
-    def __init__(self, groupname: str, username: str, text: str, message_type: str ="group_message"):
-        self.groupname = groupname
         self.username = username
         self.text = text
         self.message_type = message_type
@@ -69,48 +62,6 @@ class ChatMessage(ft.Row):
         ]
         return colors_lookup[hash(user_name) % len(colors_lookup)]
 
-class GroupChatMessage(ft.Row):
-    def __init__(self, message: GroupMessage):
-        super().__init__()
-        self.vertical_alignment = ft.CrossAxisAlignment.START
-        self.controls=[
-            ft.CircleAvatar(
-                content=ft.Text(self.get_initials(message.groupname)),
-                color=ft.colors.WHITE,
-                bgcolor=self.get_avatar_color(message.groupname),
-            ),
-            ft.Column(
-                [
-                    ft.Text(message.groupname, weight="bold"),
-                    ft.Text(message.text, selectable=True),
-                ],
-                tight=True,
-                spacing=5,
-            ),
-        ]
-
-    def get_initials(self, group_name: str):
-        return group_name[:1].capitalize()
-
-    def get_avatar_color(self, group_name: str):
-        colors_lookup = [
-            ft.colors.AMBER,
-            ft.colors.BLUE,
-            ft.colors.BROWN,
-            ft.colors.CYAN,
-            ft.colors.GREEN,
-            ft.colors.INDIGO,
-            ft.colors.LIME,
-            ft.colors.ORANGE,
-            ft.colors.PINK,
-            ft.colors.PURPLE,
-            ft.colors.RED,
-            ft.colors.TEAL,
-            ft.colors.YELLOW,
-        ]
-        return colors_lookup[hash(group_name) % len(colors_lookup)]
-
-
 class ChatApp():
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -121,7 +72,7 @@ class ChatApp():
         except Exception as e:
             print(f"Failed to connect to server: {e}")
         
-        self.cc = ChatClient()
+        self.cc = ChatClient(TARGET_IP, TARGET_PORT)
         self.tokenid = self.cc.tokenid
         self.username_dest = None
         self.groupname_dest = None
@@ -152,7 +103,6 @@ class ChatApp():
             destinations=[
                 ft.NavigationBarDestination(icon=ft.icons.CHAT, label="Chats"),
                 ft.NavigationBarDestination(icon=ft.icons.GROUP, label="Groups"),
-                ft.NavigationBarDestination(icon=ft.icons.GROUP, label="Add Group"),
             ],
         )
         
@@ -182,20 +132,6 @@ class ChatApp():
 
         threading.Thread(target=receive_messages, daemon=True).start()
 
-    def start_receiving_group_messages(self):
-        print("start_receiving_group_messages")
-        
-        def receive_group_messages():
-            print("Thread started")
-            while True:
-                response = self.cc.proses("group inbox " + self.groupname_dest)
-                print("response group inbox", response)
-                self.display_group_message(response)
-                time.sleep(1)
-
-        threading.Thread(target=receive_group_messages, daemon=True).start()
-    
-
     def display_message(self, message):
         if message['status']:
             if message['status'] == "OK":
@@ -204,18 +140,6 @@ class ChatApp():
                 for chat_message in message['messages']:
                     self.chat.controls.append(ChatMessage(Message(chat_message['msg_from'], chat_message['msg'])))
                 
-        self.page.update()
-
-    def display_group_message(self, message):
-        if message['status'] == "OK":
-            # clear chat
-            self.chat.controls.clear()
-            for chat_message in message['messages']:
-                self.chat.controls.append(
-                    GroupChatMessage(
-                        GroupMessage(self.groupname_dest, chat_message['msg_from'], chat_message['msg'])
-                    )
-                )
         self.page.update()
 
     def register_page(self):
@@ -305,10 +229,6 @@ class ChatApp():
             self.page.controls.clear()
             self.page.add(self.navigation_bar)
             self.page.add(self.groups_page())
-        elif e.control.selected_index == 2:
-            self.page.controls.clear()
-            self.page.add(self.navigation_bar)
-            self.page.add(self.button_add_group())
         self.page.update()
 
     def chats_page(self):
@@ -333,30 +253,10 @@ class ChatApp():
 
         return listuser
 
-    def groups_page(self):
-        groups = self.cc.proses("group get")
-        print("GROUPS", groups)
-
-        list_groups = ft.ListView(
-            expand=True,
-            spacing=10,
-            auto_scroll=True,
-        )
-
-        for group in list(groups.keys()):
-            group = groups[group]
-            print("TEST GROUP", group)
-            group_message = GroupChatMessage(GroupMessage(group['nama'], group['nama'], group['password']))
-            container = ft.Container(
-                content=group_message,
-                on_click=lambda e, groupname_dest=group['nama']: self.join_group_dialog(e, groupname_dest),
-            )
-            list_groups.controls.append(container)
-
-        return list_groups
-
     def dlg_modal(self, e, username_dest):
         self.username_dest = username_dest
+
+
         
         response = self.cc.proses(f"inbox {self.username_dest}")
         print("chats", response)
@@ -383,19 +283,40 @@ class ChatApp():
         self.page.add(self.navigation_bar)
         self.start_receiving_messages("personal")
 
+
+    def groups_page(self):
+        # Fetch groups from the server using ChatClient
+        groups = self.cc.proses("group get")
+        print("GROUPS", groups)
+
+        list_groups = ft.ListView(
+            expand=True,
+            spacing=10,
+            auto_scroll=True,
+        )
+
+        # Iterate over the groups retrieved and create UI elements to display them
+        for group_name in groups:
+            group_info = groups[group_name]
+            group_container = ft.Container(
+                content=ft.Text(group_name),
+                on_click=lambda e, groupname=group_name: self.join_group_dialog(e, groupname),
+            )
+            list_groups.controls.append(group_container)
+
+        return list_groups
+
     def join_group_dialog(self, e, groupname):
         self.groupname_dest = groupname
         
         response = self.cc.proses(f"group inbox {self.groupname_dest}")
-        print("group inbox", response['messages'])
-    
-        for i in range(len(response['messages'])):
-            print("group message", response['messages'][i])
-            self.chat.controls.append(
-                GroupChatMessage(
-                    GroupMessage(self.groupname_dest, response['messages'][i]['msg_from'], response['messages'][i]['msg'])
-                )
-            )
+        print("group inbox", response)
+        
+        # Clear existing chat messages
+        self.chat.controls.clear()
+        
+        for chat_message in response['messages']:
+            self.chat.controls.append(ChatMessage(Message(chat_message['msg_from'], chat_message['msg'])))
 
         new_message = ft.TextField()
 
@@ -404,11 +325,8 @@ class ChatApp():
                 return
             response = self.cc.proses(f"group send {self.groupname_dest} {new_message.value}")
             print(response)
-            self.chat.controls.append(
-                GroupChatMessage(
-                    GroupMessage(self.groupname_dest, self.cc.username, new_message.value)
-                )
-            )
+            self.chat.controls.append(ChatMessage(Message(self.cc.username, new_message.value)))
+
             new_message.value = ""
             self.page.update()
 
@@ -417,34 +335,7 @@ class ChatApp():
             self.chat, ft.Row(controls=[new_message, ft.ElevatedButton("Send", on_click=send_click)])
         )
         self.page.add(self.navigation_bar)
-        self.start_receiving_group_messages()
-
-    def button_add_group(self):
-        add_group = ft.Column()
-        groupname_input = ft.TextField(label="Group Name")
-        add_group.controls.append(groupname_input)
-        password_input = ft.TextField(label="Password")
-        add_group.controls.append(password_input)
-        add_group_button = ft.ElevatedButton(text="Add Group")
-
-        add_group_rows = ft.Row()
-        add_group_rows.controls.append(add_group_button)
-        add_group.controls.append(add_group_rows)
-
-        def on_add_group_click(e):
-            groupname = groupname_input.value
-            password = password_input.value
-            string_send = f"group add {groupname} {password}"
-            response = self.cc.proses(string_send)
-            print(response)
-            self.page.controls.clear()
-            self.page.add(self.navigation_bar)
-            self.page.add(self.groups_page())
-            self.page.update()
-
-        add_group_button.on_click = on_add_group_click
-        return add_group
-
+        self.start_receiving_messages("group")
 
 if __name__ == "__main__":
     print("trying to connect ..")

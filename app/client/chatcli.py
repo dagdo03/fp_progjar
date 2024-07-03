@@ -5,13 +5,14 @@ import sys
 import ntpath
 import base64
 import threading
+import shlex
 
-# TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.1"
-# TARGET_PORT = os.getenv("SERVER_PORT") or "8889"
+TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.1"
+TARGET_PORT = os.getenv("SERVER_PORT") or "8889"
 
 
 class ChatClient:
-    def __init__(self, TARGET_IP, TARGET_PORT):
+    def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print(TARGET_IP)
@@ -28,7 +29,7 @@ class ChatClient:
         self.listener_thread.start()
 
     def proses(self,cmdline):
-        j=cmdline.split(" ")
+        j = shlex.split(cmdline)
         try:
             command=j[0].strip()
             if (command=='auth'):
@@ -59,8 +60,8 @@ class ChatClient:
 
                 return self.register(username, email, password)
             
-            elif (command=='logout'):
-                tokenid = self.tokenid
+            elif (command == "logout"):
+                tokenid = j[1].strip()
                 return self.logout(tokenid)
             
             elif (command == "group"):
@@ -129,7 +130,76 @@ class ChatClient:
                 groupname=j[2].strip()
                 return self.inboxgrouprealm(realm_id,groupname)
             
+            elif (command=='sendfile'):
+                usernameto=j[1].strip()
+                filepath=j[2].strip()
+                return self.sendfile(usernameto,filepath)
             
+            elif (command=='downloadfile'):
+                fileid=j[1].strip()
+                filename=j[2].strip()
+                savepath=j[3].strip()
+                return self.downloadfile(fileid,filename,savepath)
+            
+            elif (command=='sendgroupfile'):
+                groupname=j[1].strip()
+                filepath=j[2].strip()
+                return self.sendgroupfile(groupname,filepath)
+            
+            elif (command=='downloadgroupfile'):
+                groupname=j[1].strip()
+                fileid=j[2].strip()
+                filename=j[3].strip()
+                savepath=j[4].strip()
+                return self.downloadgroupfile(groupname,fileid,filename,savepath)
+            
+            elif (command=='sendrealmfile'):
+                realm_id=j[1].strip()
+                usernameto = j[2].strip()
+                filepath=j[3].strip()
+                return self.sendrealmfile(realm_id,usernameto,filepath)
+            
+            elif (command=='downloadrealmfile'):
+                realm_id=j[1].strip()
+                fileid=j[2].strip()
+                filename=j[3].strip()
+                savepath=j[4].strip()
+                return self.downloadrealmfile(realm_id,fileid,filename,savepath)
+            
+            elif (command=='sendgrouprealmfile'):
+                realm_id=j[1].strip()
+                groupname = j[2].strip()
+                filepath=j[3].strip()
+                return self.sendgrouprealmfile(realm_id,groupname,filepath)
+            
+            elif (command=='downloadgrouprealmfile'):
+                realm_id=j[1].strip()
+                groupname=j[2].strip()
+                fileid=j[3].strip()
+                filename=j[4].strip()
+                savepath=j[5].strip()
+                return self.downloadgrouprealmfile(realm_id,groupname,fileid,filename,savepath)
+            
+            elif (command == 'listfile'):
+                tokenid = self.tokenid
+                return self.listfile(tokenid)
+            
+            elif (command == 'listgroupfile'):
+                tokenid = self.tokenid
+                groupname = j[1].strip()
+                return self.listgroupfile(tokenid, groupname)
+
+            elif command == 'listrealmfile':
+                tokenid = self.tokenid
+                realm_id = j[1].strip()
+                return self.listrealmfile(tokenid, realm_id)
+
+            elif command == 'listgrouprealmfile':
+                tokenid = self.tokenid
+                groupname = j[1].strip()
+                realm_id = j[2].strip()
+                return self.listgrouprealmfile(tokenid, groupname, realm_id)
+
             else:
                 return "*Maaf, command tidak benar"
         except IndexError:
@@ -165,11 +235,11 @@ class ChatClient:
         except:
             self.sock2.close()
             return { 'status' : 'ERROR', 'message' : 'Gagal'}
-
+          
     def is_login(self):
         if self.tokenid is None or self.tokenid == "":
             return False, "Error, User not authenticated."
-        return True, None         
+        return True, None   
 
     def login(self,username,password):
         string="auth {} {} \r\n" . format(username,password)
@@ -206,7 +276,6 @@ class ChatClient:
             return result["message"]
         else:
             return "Error, {}".format(result["message"])
-    
     # Fitur autentikasi tambahan
     def register(self, username, email, password):
         print("PLISS MASUKKKK")
@@ -219,12 +288,8 @@ class ChatClient:
         else:
             return "Error, {}".format(result["message"])
         
-    def logout(self, tokenid):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        
-        string = "logout {}\r\n".format(tokenid)
+    def logout(self):
+        string = "logout \r\n"
         result = self.sendstring(string)
         if result["status"] == "OK":
             self.tokenid = ""
@@ -233,12 +298,8 @@ class ChatClient:
             return "Error, {}".format(result["message"])
 
     def sendmessage(self,usernameto="xxx",message="xxx"):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="send {} {} {} \r\n" . format(self.tokenid,usernameto,message)
         print(string)
         result = self.sendstring(string)
@@ -248,12 +309,8 @@ class ChatClient:
             return "Error, {}" . format(result['message'])
 
     def inbox(self, username_from):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-    
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="inbox {} {}\r\n" . format(self.tokenid, username_from)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -264,22 +321,14 @@ class ChatClient:
     
     # Local Group-related
     def getgroups(self):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        
         string = "getgroups {} \r\n"
         result = self.sendstring(string)
         if result["status"] == "OK":
             return result["message"]
     
     def addgroup(self, groupname, password):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="addgroup {} {} {} \r\n" . format(self.tokenid, groupname, password)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -288,12 +337,8 @@ class ChatClient:
             return "Error, {}" . format(result['message'])
         
     def joingroup(self, groupname, password):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="joingroup {} {} {} \r\n" . format(self.tokenid, groupname, password)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -302,11 +347,8 @@ class ChatClient:
             return "Error, {}" . format(result['message'])
     
     def sendgroup(self, groupname, message):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="sendgroup {} {} {} \r\n" . format(self.tokenid, groupname, message)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -315,15 +357,12 @@ class ChatClient:
             return "Error, {}" . format(result['message'])
         
     def inboxgroup(self, groupname):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
-        #if (self.tokenid==""):
-        #    return "Error, not authorized"
+        if (self.tokenid==""):
+            return "Error, not authorized"
         string="inboxgroup {} {}\r\n" . format(self.tokenid, groupname)
         result = self.sendstring(string)
         if result['status']=='OK':
-            return "{}" . format(json.dumps(result['messages']))
+            return {'status': 'OK', "messages":result['messages']}
         else:
             return "Error, {}" . format(result['message'])
 
@@ -387,14 +426,195 @@ class ChatClient:
         else:
             return "Error, {}" . format(result['message'])
   
+# =================== FILE PROTOCOL ===========================
+    def path_leaf(self,path):
+        head, tail = ntpath.split(path)
+        return tail or ntpath.basename(head)
+    
+    def sendfile(self,usernameto,filepath):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        filecontent = ""
+        with open(filepath, 'rb') as fp:
+            filecontent = base64.b64encode(fp.read()).decode('utf-8')
+        filename = self.path_leaf(filepath)
+        print("test print from sendfile", filename, filecontent)
+        string="sendfile {} {} {} {}\r\n" . format(self.tokenid,usernameto,filename,filecontent)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return "file sent to {}" . format(usernameto)
+        else:
+            return "Error, {}" . format(result['message'])
+        
+    def downloadfile(self,fileid,filename,savepath):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        string="downloadfile {} {} {}\r\n" . format(self.tokenid,fileid,filename)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            filecontent = base64.b64decode(result['message'])
+            filepath = os.path.join(savepath, filename)
+            try:
+                with open(filepath, 'wb') as file:
+                    file.write(filecontent)
+                return "File downloaded and saved successfully."
+            except IOError as e:
+                return "Error while saving the file: {}".format(str(e))
+        else:
+            return "Error, {}" . format(result['message'])
+        
+    def sendgroupfile(self,groupname,filepath):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        filecontent = ""
+        with open(filepath, 'rb') as fp:
+            filecontent = base64.b64encode(fp.read()).decode('utf-8')
+        filename = self.path_leaf(filepath)
+        string="sendgroupfile {} {} {} {}\r\n" . format(self.tokenid,groupname,filename,filecontent)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return "file sent to {}" . format(groupname)
+        else:
+            return "Error, {}" . format(result['message'])
+        
+    def downloadgroupfile(self,groupname,fileid,filename,savepath):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        string="downloadgroupfile {} {} {} {}\r\n" . format(self.tokenid,groupname,fileid,filename)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            filecontent = base64.b64decode(result['message'])
+            filepath = os.path.join(savepath, filename)
+            try:
+                with open(filepath, 'wb') as file:
+                    file.write(filecontent)
+                return "File downloaded and saved successfully."
+            except IOError as e:
+                return "Error while saving the file: {}".format(str(e))
+        else:
+            return "Error, {}" . format(result['message'])
+            
+    def sendrealmfile(self, realm_id, usernameto, filepath):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        filecontent = ""
+        with open(filepath, 'rb') as fp:
+            filecontent = base64.b64encode(fp.read()).decode('utf-8')
+        filename = self.path_leaf(filepath)
+        string="sendrealmfile {} {} {} {} {} {} {}\r\n" . format(self.address_ip, self.address_port, self.tokenid, realm_id, usernameto, filename,filecontent)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return "realm message sent to user {} realm {}" . format(usernameto, realm_id)
+        else:
+            return "Error, {}" . format(result['message'])
+        
+    def downloadrealmfile(self, realm_id,fileid,filename,savepath):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        string="downloadrealmfile {} {} {} {}\r\n" . format(self.tokenid, realm_id,fileid,filename)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            filecontent = base64.b64decode(result['message'])
+            filepath = os.path.join(savepath, filename)
+            try:
+                with open(filepath, 'wb') as file:
+                    file.write(filecontent)
+                return "File downloaded and saved successfully."
+            except IOError as e:
+                return "Error while saving the file: {}".format(str(e))
+        else:
+            return "Error, {}" . format(result['message'])
+        
+    def sendgrouprealmfile(self,realm_id,groupname,filepath):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        filecontent = ""
+        with open(filepath, 'rb') as fp:
+            filecontent = base64.b64encode(fp.read()).decode('utf-8')
+        filename = self.path_leaf(filepath)
+        string="sendgrouprealmfile {} {} {} {} {} {} {}\r\n" . format(self.address_ip, self.address_port, self.tokenid, realm_id, groupname, filename,filecontent)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return "file sent to {}" . format(groupname)
+        else:
+            return "Error, {}" . format(result['message'])
+        
+    def downloadgrouprealmfile(self,realm_id,groupname,fileid,filename,savepath):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        string="downloadgrouprealmfile {} {} {} {} {}\r\n" . format(self.tokenid,realm_id,groupname,fileid,filename)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            filecontent = base64.b64decode(result['message'])
+            filepath = os.path.join(savepath, filename)
+            try:
+                with open(filepath, 'wb') as file:
+                    file.write(filecontent)
+                return "File downloaded and saved successfully."
+            except IOError as e:
+                return "Error while saving the file: {}".format(str(e))
+        else:
+            return "Error, {}" . format(result['message'])
+        
+# =================== LIST FILE PROTOCOL ===========================
+    def listfile(self, tokenid):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listfile {}\r\n".format(tokenid)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
+        
+    def listgroupfile(self, tokenid, groupname):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listgroupfile {} {}\r\n".format(tokenid, groupname)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
 
+    def listrealmfile(self, tokenid, realm_id):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listrealmfile {} {}\r\n".format(tokenid, realm_id)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
+
+    def listgrouprealmfile(self, tokenid, groupname, realm_id):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listgrouprealmfile {} {} {}\r\n".format(tokenid, groupname, realm_id)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
 
 if __name__ == "__main__":
-    TARGET_IP = "127.0.0.2"  # Default IP address
-    TARGET_PORT = 8000       # Default port number
-
-    cc = ChatClient(TARGET_IP, TARGET_PORT)
+    cc = ChatClient()
     while True:
-        cmdline = input("Command {}:".format(cc.tokenid))
+        cmdline = input("Command {}:" . format(cc.tokenid))
         print(cc.proses(cmdline))
-
