@@ -811,14 +811,14 @@ class Chat:
             return { 'status': 'ERROR', 'message': 'Group belum ada' }
         if (username not in self.groups[groupname]['members']):
             return { 'status': 'ERROR', 'message': 'Bukan member group' }
-        s_fr = self.get_group(groupname)
-        incoming = s_fr['incoming']
-        msgs={}
-        for users in incoming:
-            msgs[users]=[]
-            temp_queue = incoming[users].queue.copy()
-            while len(temp_queue) > 0:
-                msgs[users].append(temp_queue.pop())
+        # s_fr = self.get_group(groupname)
+        # incoming = s_fr['incoming']
+        # msgs={}
+        # for users in incoming:
+        #     msgs[users]=[]
+        #     temp_queue = incoming[users].queue.copy()
+        #     while len(temp_queue) > 0:
+        #         msgs[users].append(temp_queue.pop())
 
         return {'status': 'OK', 'messages': msgs}
 
