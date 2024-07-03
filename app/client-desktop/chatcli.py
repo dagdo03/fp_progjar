@@ -49,9 +49,6 @@ class ChatClient:
             elif (command=="users"):
                 return self.get_users()
             
-            elif (command == "getme"):
-                return self.get_me()
-            
             elif (command == "register"):
                 username = j[1].strip()
                 email = j[2].strip()
@@ -100,6 +97,7 @@ class ChatClient:
                 realm_address=j[2].strip()
                 realm_port=j[3].strip()
                 print (realm_id, realm_address, realm_port)
+                print (realm_id, realm_address, realm_port)
                 return self.addrealm(realm_id,realm_address,realm_port)
                 
             elif (command=='checkrealm'):
@@ -116,6 +114,9 @@ class ChatClient:
             elif (command=='inboxrealm'):
                 realm_id=j[1].strip()
                 return self.inboxrealm(realm_id)
+            
+            elif (command == "getme"):
+                return self.get_me()
             
             elif command == 'sendgrouprealm':
                 realm_id = j[1].strip()
@@ -296,7 +297,8 @@ class ChatClient:
             return "user logged out"
         else:
             return "Error, {}".format(result["message"])
-
+        
+        
     def sendmessage(self,usernameto="xxx",message="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
@@ -402,7 +404,7 @@ class ChatClient:
         string="inboxrealm {} {}\r\n" . format(self.tokenid, realm_id)
         result = self.sendstring(string)
         if result['status']=='OK':
-            return "{}" . format(json.dumps(result['messages']))
+            return result['messages']
         else:
             return "Error, {}" . format(result['message'])
         
@@ -613,7 +615,6 @@ class ChatClient:
         else:
             return "Error, {}".format(result['message'])
 
-
 if __name__ == "__main__":
     cc = ChatClient()
     while True:
@@ -621,4 +622,3 @@ if __name__ == "__main__":
         print(cc.proses(cmdline))
 
 
- 

@@ -517,6 +517,57 @@ class ChatApp():
         self.start_receiving_messages("personal")
 
 
+    def groups_page(self):
+        groups = self.cc.proses("group get")
+        print("GROUPS", groups)
+
+        list_groups = ft.ListView(
+            expand=True,
+            spacing=10,
+            auto_scroll=True,
+        )
+
+        for group in list(groups.keys()):
+            group = groups[group]
+            print("TEST GROUP", group)
+            group_message = GroupChatMessage(GroupMessage(group['nama'], group['nama'], group['password']))
+            container = ft.Container(
+                content=group_message,
+                on_click=lambda e, groupname_dest=group['nama']: self.join_group_dialog(e, groupname_dest),
+            )
+            list_groups.controls.append(container)
+
+        return list_groups
+
+    def dlg_modal(self, e, username_dest):
+        self.username_dest = username_dest
+        
+        response = self.cc.proses(f"inbox {self.username_dest}")
+        print("chats", response)
+        
+        for chat_message in response['messages']:
+            self.chat.controls.append(ChatMessage(Message(chat_message['msg_from'], chat_message['msg'])))
+
+        new_message = ft.TextField()
+
+        def send_click(e):
+            if new_message.value == "":
+                return
+            response = self.cc.proses(f"send {self.username_dest} {new_message.value}")
+            print(response)
+            self.chat.controls.append(ChatMessage(Message(self.cc.username, new_message.value)))
+
+            new_message.value = ""
+            self.page.update()
+
+        self.page.clean()
+        self.page.add(
+            self.chat, ft.Row(controls=[new_message, ft.ElevatedButton("Send", on_click=send_click)])
+        )
+        self.page.add(self.navigation_bar)
+        self.start_receiving_messages("personal")
+
+
     def join_group_dialog(self, e, groupname):
         self.groupname_dest = groupname
         
@@ -532,6 +583,26 @@ class ChatApp():
             )
 
         new_message = ft.TextField()
+
+        def send_click(e):
+            if new_message.value == "":
+                return
+            response = self.cc.proses(f"group send {self.groupname_dest} {new_message.value}")
+            print(response)
+            self.chat.controls.append(
+                GroupChatMessage(
+                    GroupMessage(self.groupname_dest, self.cc.username, new_message.value)
+                )
+            )
+            new_message.value = ""
+            self.page.update()
+
+        self.page.clean()
+        self.page.add(
+            self.chat, ft.Row(controls=[new_message, ft.ElevatedButton("Send", on_click=send_click)])
+        )
+        self.page.add(self.navigation_bar)
+        self.start_receiving_group_messages()
 
         def send_click(e):
             if new_message.value == "":
