@@ -55,8 +55,6 @@ class ChatClient:
                 print(username, email, password)
 
                 return self.register(username, email, password)
-            elif (command=='logout'):
-                pass
             
             elif (command == "group"):
                 print(j)
@@ -173,6 +171,30 @@ class ChatClient:
                 savepath=j[5].strip()
                 return self.downloadgrouprealmfile(realm_id,groupname,fileid,filename,savepath)
             
+            elif (command == 'listfile'):
+                tokenid = self.tokenid
+                return self.listfile(tokenid)
+            
+            elif (command == 'listgroupfile'):
+                tokenid = self.tokenid
+                groupname = j[1].strip()
+                return self.listgroupfile(tokenid, groupname)
+
+            elif command == 'listrealmfile':
+                tokenid = self.tokenid
+                realm_id = j[1].strip()
+                return self.listrealmfile(tokenid, realm_id)
+
+            elif command == 'listgrouprealmfile':
+                tokenid = self.tokenid
+                groupname = j[1].strip()
+                realm_id = j[2].strip()
+                return self.listgrouprealmfile(tokenid, groupname, realm_id)
+
+            elif (command == "logout"):
+                tokenid = j[1].strip()
+                return self.logout(tokenid)
+            
 
             else:
                 return "*Maaf, command tidak benar"
@@ -248,7 +270,8 @@ class ChatClient:
             return "user logged out"
         else:
             return "Error, {}".format(result["message"])
-
+        
+        
     def sendmessage(self,usernameto="xxx",message="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
@@ -505,6 +528,62 @@ class ChatClient:
         else:
             return "Error, {}" . format(result['message'])
   
+  # =================== LIST FILE PROTOCOL ===========================
+    def listfile(self, tokenid):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listfile {}\r\n".format(tokenid)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
+        
+    def listgroupfile(self, tokenid, groupname):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listgroupfile {} {}\r\n".format(tokenid, groupname)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
+
+    def listrealmfile(self, tokenid, realm_id):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listrealmfile {} {}\r\n".format(tokenid, realm_id)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
+
+    def listgrouprealmfile(self, tokenid, groupname, realm_id):
+        authenticated, error_message = self.is_login()
+        if not authenticated:
+            return error_message
+        
+        string = "listgrouprealmfile {} {} {}\r\n".format(tokenid, groupname, realm_id)
+        result = self.sendstring(string)
+        if result['status'] == 'OK':
+            file_list = result['files']
+            formatted_list = ["From: {}, Filename: {}, FileID: {}".format(f['from'], f['filename'], f['fileid']) for f in file_list]
+            return "\n".join(formatted_list)
+        else:
+            return "Error, {}".format(result['message'])
 
 
 if __name__=="__main__":
