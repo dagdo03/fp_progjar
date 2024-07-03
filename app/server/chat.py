@@ -22,6 +22,7 @@ db = mysql.connector.connect(
 
 cursor = db.cursor()
 
+cursor.execute("SELECT * FROM realms WHERE realm_address = '127.0.0.1' AND realm_port = '8000'")
 
 class RealmThreadCommunication(threading.Thread):
     def __init__(self, chats, realm_dest_address, realm_dest_port):
