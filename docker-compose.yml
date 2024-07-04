@@ -12,10 +12,10 @@ services:
       - mysql-data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - progjarnet
+      - network_progjar
 
   chatserver:
-    image: python:3.11.3-alpine3.17 
+    image: python:3.12.4-alpine3.19 
     restart: unless-stopped
     volumes:
       - ./app/server:/app
@@ -35,13 +35,13 @@ services:
       - -c
       - 'cd /app && pip3 install -r requirements.txt && python3 server.py'
     networks:
-      - progjarnet
+      - network_progjar
 
   chatclient:
-    image: python:3.11.3-alpine3.17 
+    image: python:3.12.4-alpine3.19 
     restart: unless-stopped
     environment:
-      - SERVER_IP_1=127.0.0.1
+      - SERVER_IP=172.222.221.3
       - SERVER_PORT=8889
       - ONWEB=1
     working_dir: /app
@@ -56,10 +56,10 @@ services:
     depends_on:
       - chatserver
     networks:
-      - progjarnet
+      - network_progjar
 
 networks:
-  progjarnet:
+  network_progjar:
     ipam:
       config:
         - subnet: 172.222.221.0/24

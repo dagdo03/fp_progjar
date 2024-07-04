@@ -10,7 +10,7 @@ import os
 
 
 
-SERVER_IP=os.getenv('SERVER_IP') or "0.0.0.0"
+SERVER_IP=os.getenv('SERVER_IP') or "127.0.0.1"
 SERVER_PORT=os.getenv('SERVER_PORT') or "8889"
 
 chatserver = Chat()
