@@ -6,7 +6,7 @@ import ntpath
 import base64
 import threading
 
-TARGET_IP = os.getenv("SERVER_IP_2") or "127.0.0.2"
+TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.2"
 TARGET_PORT = os.getenv("SERVER_PORT") or "8889"
 
 

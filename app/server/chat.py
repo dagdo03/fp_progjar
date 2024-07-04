@@ -14,17 +14,15 @@ from datetime import datetime
 
 
 # Database connection setup
-try:
-    db = mysql.connector.connect(
+db = mysql.connector.connect(
         host=os.getenv('MYSQL_HOST', 'localhost'),
         user=os.getenv('MYSQL_USER', 'root'),
+        port=int(os.getenv('MYSQL_PORT', '3306')),
         password=os.getenv('MYSQL_PASSWORD', ''),
         database=os.getenv('MYSQL_DB', 'chatapp2')
-    )
-    if db.is_connected():
-        cursor = db.cursor()
-except Error as e:
-    print("Error while connecting to MySQL", e)
+)
+
+cursor = db.cursor()
 
 
 class RealmThreadCommunication(threading.Thread):

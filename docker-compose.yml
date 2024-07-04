@@ -7,7 +7,7 @@ services:
       MYSQL_ROOT_PASSWORD: yourpassword
       MYSQL_DATABASE: chatapp2
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -26,6 +26,7 @@ services:
       - MYSQL_DATABASE=chatapp2
       - MYSQL_USER=root
       - MYSQL_PASSWORD=yourpassword
+      - MYSQL_PORT=3306
     working_dir: /app
     ports:
       - 8889:8889
@@ -40,7 +41,7 @@ services:
     image: python:3.11.3-alpine3.17 
     restart: unless-stopped
     environment:
-      - SERVER_IP=127.0.0.1
+      - SERVER_IP_1=127.0.0.1
       - SERVER_PORT=8889
       - ONWEB=1
     working_dir: /app
