@@ -1,47 +1,67 @@
 version: '3'
 services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: yourpassword
+      MYSQL_DATABASE: chatapp2
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - progjarnet
+
   chatserver:
     image: python:3.11.3-alpine3.17 
     restart: unless-stopped
     volumes:
-    - ./app/server:/app
+      - ./app/server:/app
     environment: 
-    - SERVER_IP=0.0.0.0
-    - SERVER_PORT=8889
+      - SERVER_IP=0.0.0.0
+      - SERVER_PORT=8889
+      - MYSQL_HOST=mysql
+      - MYSQL_DATABASE=chatapp2
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=yourpassword
     working_dir: /app
     ports:
-    - 8889:8889
+      - 8889:8889
     command:
-    - /bin/sh
-    - -c
-    - 'cd /app && pip3 install -r requirements.txt && python3 server.py'
+      - /bin/sh
+      - -c
+      - 'cd /app && pip3 install -r requirements.txt && python3 server.py'
     networks:
       - progjarnet
+
   chatclient:
     image: python:3.11.3-alpine3.17 
     restart: unless-stopped
     environment:
-      - SERVER_IP=chatserver
+      - SERVER_IP=127.0.0.1
       - SERVER_PORT=8889
       - ONWEB=1
     working_dir: /app
     ports:
-    - 8550:8550
+      - 8550:8550
     volumes:
-    - ./app/client:/app
+      - ./app/client:/app
     command:
-    - /bin/sh
-    - -c
-    - 'cd /app && pip3 install -r requirements.txt && python3 chat-flet.py'
+      - /bin/sh
+      - -c
+      - 'cd /app && pip3 install -r requirements.txt && python3 chat-flet.py'
     depends_on:
-    - chatserver
-#    deploy:
-#      mode: replicated
-#      replicas: 1
+      - chatserver
     networks:
       - progjarnet
+
 networks:
   progjarnet:
     ipam:
       config:
         - subnet: 172.222.221.0/24
+
+volumes:
+  mysql-data:

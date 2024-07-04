@@ -8,19 +8,23 @@ import uuid
 import logging
 from queue import  Queue
 import mysql.connector
+from mysql.connector import Error
 from datetime import datetime
 
 
 
 # Database connection setup
-db = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="chatapp2"
-)
-
-cursor = db.cursor()
+try:
+    db = mysql.connector.connect(
+        host=os.getenv('MYSQL_HOST', 'localhost'),
+        user=os.getenv('MYSQL_USER', 'root'),
+        password=os.getenv('MYSQL_PASSWORD', ''),
+        database=os.getenv('MYSQL_DB', 'chatapp2')
+    )
+    if db.is_connected():
+        cursor = db.cursor()
+except Error as e:
+    print("Error while connecting to MySQL", e)
 
 
 class RealmThreadCommunication(threading.Thread):
@@ -139,7 +143,12 @@ class Chat:
                 return self.register(username, email, password)
             
             elif (command == "logout"):
-                return self.logout()
+                sessionid = j[1].strip()
+                return self.logout(sessionid)
+            
+            elif (command == "getme"):
+                sessionid = j[1].strip()
+                return self.get_me(sessionid)
             
             elif (command=='send'):
                 sessionid = j[1].strip()
@@ -497,12 +506,19 @@ class Chat:
         self.sessions[tokenid]={ 'username': username, 'userdetail':self.users[username]}
         return {"status": "OK", "tokenid": tokenid}
     
-    def logout(self, tokenid):
-        if tokenid in self.sessions:
-            del self.sessions[tokenid]
+    def logout(self, sessionid):
+        if sessionid in self.sessions:
+            del self.sessions[sessionid]
             return {"status": "OK"}
         else:
             return {"status": "ERROR", "message": "User Belum Login"}
+        
+    def get_me(self, tokenid):
+        data = self.sessions[tokenid]
+        if (bool(data) == True):
+            return {"status": "OK", "message": data}
+        else:
+            return {"status": "Error", "message": "User tidak ditemukan"}
     
     
     def get_user(self,username):

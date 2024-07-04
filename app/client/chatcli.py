@@ -6,7 +6,7 @@ import ntpath
 import base64
 import threading
 
-TARGET_IP = os.getenv("SERVER_IP") or "127.0.0.2"
+TARGET_IP = os.getenv("SERVER_IP_1") or "127.0.0.1"
 TARGET_PORT = os.getenv("SERVER_PORT") or "8889"
 
 
@@ -192,9 +192,10 @@ class ChatClient:
                 return self.listgrouprealmfile(tokenid, groupname, realm_id)
 
             elif (command == "logout"):
-                tokenid = j[1].strip()
-                return self.logout(tokenid)
+                return self.logout()
             
+            elif (command == "getme"):
+                return self.get_me()
 
             else:
                 return "*Maaf, command tidak benar"
@@ -244,7 +245,21 @@ class ChatClient:
             return "Error, {}" . format(result['message'])
         
     def get_users(self):
-        string = "users {} \r\n"
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        
+        string = "users \r\n"
+        result = self.sendstring(string)
+        if result["status"] == "OK":
+            return result["message"]
+        else:
+            return "Error, {}".format(result["message"])      
+    
+    def get_me(self):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        
+        string = "getme {} \r\n".format(self.tokenid)
         result = self.sendstring(string)
         if result["status"] == "OK":
             return result["message"]
@@ -263,7 +278,7 @@ class ChatClient:
             return "Error, {}".format(result["message"])
         
     def logout(self):
-        string = "logout \r\n"
+        string = "logout {}\r\n" .format(self.tokenid)
         result = self.sendstring(string)
         if result["status"] == "OK":
             self.tokenid = ""
@@ -530,9 +545,8 @@ class ChatClient:
   
   # =================== LIST FILE PROTOCOL ===========================
     def listfile(self, tokenid):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
+        if (self.tokenid==""):
+            return "Error, not authorized"
         
         string = "listfile {}\r\n".format(tokenid)
         result = self.sendstring(string)
@@ -544,9 +558,8 @@ class ChatClient:
             return "Error, {}".format(result['message'])
         
     def listgroupfile(self, tokenid, groupname):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
+        if (self.tokenid==""):
+            return "Error, not authorized"
         
         string = "listgroupfile {} {}\r\n".format(tokenid, groupname)
         result = self.sendstring(string)
@@ -558,9 +571,8 @@ class ChatClient:
             return "Error, {}".format(result['message'])
 
     def listrealmfile(self, tokenid, realm_id):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
+        if (self.tokenid==""):
+            return "Error, not authorized"
         
         string = "listrealmfile {} {}\r\n".format(tokenid, realm_id)
         result = self.sendstring(string)
@@ -572,9 +584,8 @@ class ChatClient:
             return "Error, {}".format(result['message'])
 
     def listgrouprealmfile(self, tokenid, groupname, realm_id):
-        authenticated, error_message = self.is_login()
-        if not authenticated:
-            return error_message
+        if (self.tokenid==""):
+            return "Error, not authorized"
         
         string = "listgrouprealmfile {} {} {}\r\n".format(tokenid, groupname, realm_id)
         result = self.sendstring(string)
